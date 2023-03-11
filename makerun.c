@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 	FILE *f, *g;
 	struct header header;
 	long flen;
-	size_t file_size, reloc_size = 0;
+	size_t file_size, reloc_size = 0, expected_size = 0;
 	char buf[256];
 
 	if (argc != 4) {
@@ -70,6 +70,7 @@ int main(int argc, char **argv)
 		fclose(f);
 		return 1;
 	}
+	expected_size = header.rosize + header.rwsize + header.dbsize;
 
 	if ((header.decompress >> 24) == 0xEB) {
 		/* Image is compressed */
@@ -113,6 +114,8 @@ int main(int argc, char **argv)
 		}
 
 		file_size = sizeof(header) + (size_t) sqzhdr.decsize;
+		/* Round expected size up to an even number of words */
+		expected_size = (expected_size + 7) & ~7;
 	}
 
 	fclose(f);
@@ -143,8 +146,7 @@ int main(int argc, char **argv)
 			reloc_size += header.wkspace;
 		}
 
-		if (header.rosize + header.rwsize + header.dbsize !=
-				file_size) {
+		if (file_size != expected_size) {
 			fprintf(stderr, "Mismatched field sizes\n");
 			return 1;
 		}
