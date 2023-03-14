@@ -113,9 +113,17 @@ int main(int argc, char **argv)
 			return 1;
 		}
 
+		/* Squeeze always processes pairs of words at a time,
+		 * so the declared decompressed size will always be
+		 * rounded up to an 8-byte boundary. We will need to
+		 * adjust expected_size to account for this but, if
+		 * the image is also relocateable, the file size will
+		 * be modified instead as a result of discarding the
+		 * relocation code and tables from the end of the
+		 * image. Therefore, we'll defer the expected_size
+		 * adjustment until later.
+		 */
 		file_size = sizeof(header) + (size_t) sqzhdr.decsize;
-		/* Round expected size up to an even number of words */
-		expected_size = (expected_size + 7) & ~7;
 	}
 
 	fclose(f);
@@ -144,6 +152,11 @@ int main(int argc, char **argv)
 			file_size -= reloc_size;
 			/* Add relocation workspace on to reloc size */
 			reloc_size += header.wkspace;
+		} else if ((header.decompress >> 24) == 0xEB) {
+			/* Image is compressed, but not relocateable */
+			/* Round expected size up to an even number of words
+			 * (see above for details) */
+			expected_size = (expected_size + 7) & ~7;
 		}
 
 		if (file_size != expected_size) {
