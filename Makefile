@@ -44,12 +44,17 @@ ifeq ($(TARGET),riscos)
       EXEEXT := ,e1f
       SUBTARGET := -elf-
     else
-      ifneq (,$(findstring arm-riscos-gnueabihf-gcc,$(CC)))
+      ifneq (,$(findstring arm-riscos-gnueabi-gcc,$(CC)))
         EXEEXT := ,e1f
         SUBTARGET := -elfeabi-
       else
-        EXEEXT := ,ff8
-        SUBTARGET := -aof-
+        ifneq (,$(findstring arm-riscos-gnueabihf-gcc,$(CC)))
+          EXEEXT := ,e1f
+          SUBTARGET := -elfeabihf-
+        else
+          EXEEXT := ,ff8
+          SUBTARGET := -aof-
+        endif
       endif
     endif
   endif
